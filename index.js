@@ -49,20 +49,9 @@ function convertParam(options, req, param, model, variable, done, notFound) {
 
   if (!req.params[param]) return;
 
-	var docs = req.documents = req.documents || {};
-
 	model = model || upperFirstLetter(param);
 
-	if (!variable) {
-		if (typeof docs[param] === "undefined") {
-			variable = param;
-		} else {
-			var i = 0;
-			do {
-				variable = param + ++i;
-			} while (typeof docs[variable] !== "undefined");
-		}
-	}
+  variable = variable || param;
 
   try {
     var modelClass = mongoose.model(model);
@@ -70,6 +59,8 @@ function convertParam(options, req, param, model, variable, done, notFound) {
     debugger;
     // TODO
   }
+
+  var docs = req.documents = req.documents || {};
 
   modelClass.findById(req.params[param], function(err, document) {
     if (err) 
