@@ -19,6 +19,7 @@ function param2doc(param, model, variable) {
 			convertParam(param2doc.options, req, param, model, variable, function() {
         next();
       }, function() {
+        // TODO Option to do something else if ID doesn't match
         next('route');
       });
 		}
@@ -35,7 +36,7 @@ param2doc.init = function(options) {
 	}
 
   if (!param2doc.options.mongoose) {
-    throw "param2doc: Initialization with reference to Mongoose needed."
+    throw "param2doc: Initialization requires reference to Mongoose."
   }
 }
 
@@ -48,7 +49,7 @@ function convertParam(options, req, param, model, variable, done, notFound) {
 
   if (!req.params[param]) return;
 
-	docs = req.documents = req.documents || {};
+	var docs = req.documents = req.documents || {};
 
 	model = model || upperFirstLetter(param);
 
