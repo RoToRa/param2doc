@@ -1,18 +1,21 @@
 
+/**
+ * Main export which returns a middleware function. When called without any
+ * arguments attempts to convert all parameters of the path into documents.
+ * 
+ * @param {string} [param] Name of the routing path parameter to convert to
+ *                         a Mongoose document
+ * @param {string} [model] Name of the Mongoose model to use. Defaults to the 
+ *                         parameter <code>param</code>, however with first 
+ *                         letter capitalized.
+ * @param {string} [variable] Name of the property of the 
+ *                            <code>request.documents</code> object in which
+ *                            the found document reference is stored. 
+ */
 function param2doc(param, model, variable) {
 	if (arguments.length == 0) {
     return function (req, res, next) {
-      var chain = function(params) {
-        if (params.length == 0) {
-          next();
-        } else {
-          convertParam(param2doc.options, req, params.shift(), model, variable, function(err) {
-            // TODO Handle err
-            chain(params);
-          });
-        }
-      }
-      chain(Object.keys(req.params));
+      convertAllParams(Object.keys(req.params), req, next);
     }
   } else {
 		return function (req, res, next) {
@@ -44,24 +47,38 @@ module.exports = param2doc;
 
 /* Private functions */
 
+function convertAllParams(params, req, next) {
+  if (params.length == 0) {
+    next();
+  } else {
+    convertParam(param2doc.options, req, params.shift(), null, null, function(err) {
+      // TODO Handle err (configurable)
+      convertAllParams(params, req, next);
+    });
+  }
+}
+
 function convertParam(options, req, param, model, variable, done, notFound) {
 	var mongoose = options.mongoose;
 
+  // TODO handle non existing parameter (possibly depending on option)
   if (!req.params[param]) return;
 
-	model = model || upperFirstLetter(param);
+  // TODO make uppercase first letter optional
+	model = model || upperFirstChar(param);
 
   variable = variable || param;
 
   try {
     var modelClass = mongoose.model(model);
   } catch(e) {
+    // TODO Handle non-existent model
     debugger;
-    // TODO
   }
 
   var docs = req.documents = req.documents || {};
 
+  // TODO find document by field other than _id
   modelClass.findById(req.params[param], function(err, document) {
     if (err) 
       (notFound || done)(err);
@@ -72,6 +89,12 @@ function convertParam(options, req, param, model, variable, done, notFound) {
   });
 }
 
-function upperFirstLetter(string) {
+/**
+ * Returns the passed string with the first letter in upper case
+ * 
+ * @param {string} string
+ * @return {string}
+ */
+function upperFirstChar(string) {
 	return string.slice(0, 1).toUpperCase() + string.slice(1);
 }
